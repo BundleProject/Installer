@@ -7,19 +7,25 @@ plugins {
 
 group 'org.bundleproject'
 version '1.0'
+archivesBaseName = "Bundle-Installer"
 
 repositories {
     mavenCentral()
 }
 
+configurations {
+    include
+    implementation.extendsFrom include
+}
+
 dependencies {
-    implementation "io.ktor:ktor-client-core:1.6.2"
-    implementation "io.ktor:ktor-client-cio:1.6.2"
+    include "io.ktor:ktor-client-core:1.6.2"
+    include "io.ktor:ktor-client-cio:1.6.2"
 
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.21'
+    include 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.21'
 
-    implementation 'com.google.code.gson:gson:2.8.7'
-    implementation ('com.xenomachina:kotlin-argparser:2.0.7') {
+    include 'com.google.code.gson:gson:2.8.7'
+    include ('com.xenomachina:kotlin-argparser:2.0.7') {
         exclude module: 'kotlin-stdlib'
     }
 }
@@ -29,3 +35,12 @@ jar {
             'Main-Class': 'org.bundleproject.installer.MainKt'
     )
 }
+
+shadowJar {
+    archiveClassifier.set("")
+
+    configurations = [project.configurations.include]
+    duplicatesStrategy DuplicatesStrategy.EXCLUDE
+}
+
+jar.dependsOn shadowJar
