@@ -1,15 +1,15 @@
 package org.bundleproject.installer
 
-import com.google.gson.JsonObject
-import com.google.gson.JsonParser
-import com.google.gson.JsonPrimitive
+import com.google.gson.*
 import com.xenomachina.argparser.ArgParser
 import io.ktor.client.request.*
+import kotlinx.coroutines.runBlocking
 import org.bundleproject.installer.utils.*
 import java.io.File
 import java.io.InputStreamReader
+import java.nio.file.Files
 
-suspend fun main(args: Array<String>) {
+fun main(args: Array<String>) {
     ArgParser(args).parseInto(::InstallerParams).run {
         if (silent) {
             install(this)
@@ -18,22 +18,27 @@ suspend fun main(args: Array<String>) {
     }
 }
 
-suspend fun install(params: InstallerParams) {
+fun install(params: InstallerParams) {
     // default launcher
     if (!params.multimc) {
-        val latest = JsonParser.parseString(
+        val latest = JsonParser.parseString(runBlocking {
             http.get<String>("$API/$API_VERSION/bundle/version")
-        ).asJsonObject.get("updater").asString
+        }).asJsonObject.get("updater").asString
 
-        InputStreamReader(File(params.path, "versions/${params.mcversion}/${params.mcversion}.json")
-            .inputStream()).use {
-            val json = JsonParser.parseReader(it).asJsonObject
-            val libs = json.getAsJsonArray("libraries")
-
-            val bundleLib = JsonObject()
-            bundleLib.add("name", JsonPrimitive("com.github.BundleProject:Bundle:$latest"))
-            libs.add(JsonObject())
+        val versionJson = File(params.path, "versions/${params.mcversion}/${params.mcversion}.json")
+        val json = InputStreamReader(versionJson.inputStream()).use {
+            JsonParser.parseReader(it).asJsonObject
         }
+
+        val libs = json.getAsJsonArray("libraries")
+
+        val bundleLib = JsonObject()
+        bundleLib.add("name", JsonPrimitive("com.github.BundleProject:Bundle:$latest"))
+        bundleLib.add("url", JsonPrimitive("https://jitpack.io/"))
+        libs.add(bundleLib)
+        json.add("libraries", libs)
+
+        Files.write(versionJson.toPath(), GsonBuilder().setPrettyPrinting().create().toJson(json).toByteArray())
     }
 }
 
