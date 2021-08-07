@@ -50,7 +50,7 @@ fun getMultiMCInstanceFolder(dir: File): File? {
 
     var parent: File? = dir
     while (parent != null) {
-        if (parent.name == "MultiMC") return File(parent, "instances")
+        if (parent.name.lowercase() == "multimc") return File(parent, "instances")
         parent = parent.parentFile
     }
     return null
