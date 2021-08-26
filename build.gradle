@@ -19,7 +19,7 @@ configurations {
 }
 
 dependencies {
-    include "io.ktor:ktor-client-apache:1.6.2"
+    include "io.ktor:ktor-client-apache:1.6.3"
 
     include 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.21'
 
