@@ -1,6 +1,7 @@
 package org.bundleproject.installer.gui
 
 import com.formdev.flatlaf.FlatLightLaf
+import kotlinx.coroutines.runBlocking
 import org.bundleproject.installer.installMultiMC
 import org.bundleproject.installer.installOfficial
 import org.bundleproject.installer.utils.*
@@ -130,8 +131,10 @@ object InstallerGui : JFrame("Bundle Installer") {
             }
 
             try {
-                if (multimc != null) installMultiMC(multimc, versionField.selectedItem as String)
-                else installOfficial(dir, versionField.selectedItem as String)
+                runBlocking {
+                    if (multimc != null) installMultiMC(multimc, versionField.selectedItem as String)
+                    else installOfficial(dir, versionField.selectedItem as String)
+                }
                 success("Bundle has been successfully installed.")
             } catch (e: Exception) {
                 e.printStackTrace()
