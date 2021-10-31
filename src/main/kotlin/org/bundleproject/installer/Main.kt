@@ -6,6 +6,7 @@ import com.xenomachina.argparser.DefaultHelpFormatter
 import com.xenomachina.argparser.default
 import io.ktor.client.request.*
 import kotlinx.coroutines.runBlocking
+import org.bundleproject.installer.api.response.VersionResponse
 import org.bundleproject.installer.gui.InstallerGui
 import org.bundleproject.installer.utils.*
 import java.io.File
@@ -18,7 +19,7 @@ import java.nio.file.Files
  *
  * @since 0.0.1
  */
-fun main(args: Array<String>) {
+suspend fun main(args: Array<String>) {
     ArgParser(args, helpFormatter = DefaultHelpFormatter()).parseInto(::InstallerParams).run {
         if (silent) {
             if (path == null) throw IllegalArgumentException("Path does not exist or it wasn't specified.")
@@ -38,12 +39,10 @@ fun main(args: Array<String>) {
  *
  * @since 0.0.1
  */
-fun installOfficial(path: File, mcversion: String) {
+suspend fun installOfficial(path: File, mcversion: String) {
     println("Installing using the official launcher.")
 
-    val latest = JsonParser.parseString(runBlocking {
-        http.get<String>("$API/$API_VERSION/bundle/version")
-    }).asJsonObject.get("updater").asString
+    val latest = http.get<VersionResponse>("$API/$API_VERSION/bundle/version").data.updater
 
     val versionJson = File(path, "versions/$mcversion/$mcversion.json")
     val json = InputStreamReader(versionJson.inputStream()).use {
@@ -72,7 +71,7 @@ fun installOfficial(path: File, mcversion: String) {
  *
  * @since 0.0.1
  */
-fun installMultiMC(instanceFolder: File, instance: String) {
+suspend fun installMultiMC(instanceFolder: File, instance: String) {
     println("Installing through MultiMC")
 
     val mmcFolder = instanceFolder.parentFile!!
@@ -81,9 +80,7 @@ fun installMultiMC(instanceFolder: File, instance: String) {
     val bundleMetaFolder = File(metaFolder, "org.bundleproject")
     bundleMetaFolder.mkdir()
 
-    val latest = JsonParser.parseString(runBlocking {
-        http.get<String>("$API/$API_VERSION/bundle/version")
-    }).asJsonObject.get("updater").asString
+    val latest = http.get<VersionResponse>("$API/$API_VERSION/bundle/version").data.updater
 
     val versionFile = File(bundleMetaFolder, "$latest.json")
 

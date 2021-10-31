@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import io.ktor.client.*
 import io.ktor.client.engine.apache.*
+import io.ktor.client.features.json.*
 import org.bundleproject.installer.gui.InstallerGui
 import java.awt.image.BufferedImage
 import java.io.File
@@ -11,7 +12,9 @@ import java.text.SimpleDateFormat
 import java.util.*
 import javax.imageio.ImageIO
 
-val http = HttpClient(Apache)
+val http = HttpClient(Apache) {
+    install(JsonFeature)
+}
 val gson: Gson = GsonBuilder().setPrettyPrinting().create()
 
 /**
