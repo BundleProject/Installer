@@ -5,14 +5,12 @@ import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.DefaultHelpFormatter
 import com.xenomachina.argparser.default
 import io.ktor.client.request.*
-import kotlinx.coroutines.runBlocking
 import org.bundleproject.installer.api.response.VersionResponse
-import org.bundleproject.installer.gui.InstallerGui
+import org.bundleproject.installer.gui.frames.InstallerGui
 import org.bundleproject.installer.utils.*
 import java.io.File
 import java.io.InputStreamReader
 import java.lang.IllegalArgumentException
-import java.nio.file.Files
 
 /**
  * Parses command-line arguments and opens the gui
@@ -24,7 +22,7 @@ suspend fun main(args: Array<String>) {
         if (silent) {
             if (path == null) throw IllegalArgumentException("Path does not exist or it wasn't specified.")
 
-            if (!multimc) installOfficial(path!!, mcversion)
+            if (!multimc) installOfficial(path!!, mcversion, inject)
             else installMultiMC(getMultiMCInstanceFolder(path!!)!!, mcversion)
 
             return
@@ -39,31 +37,53 @@ suspend fun main(args: Array<String>) {
  *
  * @since 0.0.1
  */
-suspend fun installOfficial(path: File, mcversion: String) {
+suspend fun installOfficial(path: File, mcversion: String, inject: Boolean) {
     println("Installing using the official launcher.")
 
     val latest = http.get<VersionResponse>("$API/$API_VERSION/bundle/version").data.updater
 
-    val versionJson = File(path, "versions/$mcversion/$mcversion.json")
+    var versionJson = File(path, "versions/$mcversion/$mcversion.json")
     val json = InputStreamReader(versionJson.inputStream()).use {
         JsonParser.parseReader(it).asJsonObject
     }
 
+    val mainClass = json.get("mainClass").asString
     val libs = JsonArray().also {
         json.getAsJsonArray("libraries")
-            .filter  { !(it.asJsonObject.get("name")?.asString?.startsWith("com.github.BundleProject:Bundle:") ?: false) }
+            .filter  { !(it.asJsonObject.get("name")?.asString?.startsWith("org.bundleproject:bundle:") ?: false) }
             .forEach { lib -> it.add(lib) }
     }
 
-    val bundleLib = JsonObject()
-    bundleLib.addProperty("name", "com.github.BundleProject:Bundle:$latest")
+    val bundleLib = if (!inject) {
+        // switch target version json to bundle's own folder
+        versionJson = File(path, "versions/$mcversion-bundle/$mcversion-bundle.json")
+        versionJson.parentFile.mkdir()
+
+        // copy over existing jar to prevent re-downloading
+        val jar = File(path, "versions/$mcversion/$mcversion.jar")
+        if (jar.exists()) jar.copyTo(File(path, "versions/$mcversion-bundle/$mcversion-bundle.jar"))
+
+        json.also {
+            it.addProperty("id", "$mcversion-bundle")
+        }
+    } else {
+        JsonObject()
+    }
+    // add bundle library
+    bundleLib.addProperty("name", "org.bundleproject:bundle:$latest")
     bundleLib.addProperty("url", "https://jitpack.io/")
     libs.add(bundleLib)
     json.add("libraries", libs)
 
+    // make the launcher run bundle rather than the game's main class
     json.addProperty("mainClass", "org.bundleproject.bundle.main.Main")
 
-    Files.write(versionJson.toPath(), gson.toJson(json).toByteArray())
+    // input original main class into the game arguments
+    val gameArguments = json.getAsJsonObject("arguments").getAsJsonArray("game")
+    gameArguments.add("--bundleMainClass")
+    gameArguments.add(mainClass)
+
+    versionJson.writeText(gson.toJson(json))
 }
 
 /**
@@ -103,12 +123,12 @@ suspend fun installMultiMC(instanceFolder: File, instance: String) {
 
     val libs = JsonArray()
     libs.add(JsonObject().also {
-        it.addProperty("name", "com.github.BundleProject:Bundle:$latest")
+        it.addProperty("name", "org.bundleproject:bundle:$latest")
         it.addProperty("url", "https://jitpack.io/")
     })
     versionJson.add("libraries", libs)
 
-    Files.write(versionFile.toPath(), gson.toJson(versionJson).toByteArray())
+    versionFile.writeText(gson.toJson(versionJson))
 
     val bundleIndexFile = File(bundleMetaFolder, "index.json")
     val bundleIndexJson = if (bundleIndexFile.exists()) {
@@ -134,7 +154,7 @@ suspend fun installMultiMC(instanceFolder: File, instance: String) {
         it.addProperty("version", latest)
     })
 
-    Files.write(bundleIndexFile.toPath(), gson.toJson(bundleIndexJson).toByteArray())
+    bundleIndexFile.writeText(gson.toJson(bundleIndexJson))
 
     val metaIndexFile = File(metaFolder, "index.json")
     val metaIndexJson = InputStreamReader(metaIndexFile.inputStream()).use { JsonParser.parseReader(it).asJsonObject }
@@ -150,7 +170,7 @@ suspend fun installMultiMC(instanceFolder: File, instance: String) {
     })
     metaIndexJson.add("packages", packages)
 
-    Files.write(metaIndexFile.toPath(), gson.toJson(metaIndexJson).toByteArray())
+    metaIndexFile.writeText(gson.toJson(metaIndexJson))
 
     val mmcPackFile = File(instanceFolder, "$instance/mmc-pack.json")
     val mmcPackJson = InputStreamReader(mmcPackFile.inputStream()).use { JsonParser.parseReader(it).asJsonObject }
@@ -173,7 +193,7 @@ suspend fun installMultiMC(instanceFolder: File, instance: String) {
     })
     mmcPackJson.add("components", components)
 
-    Files.write(mmcPackFile.toPath(), gson.toJson(mmcPackJson).toByteArray())
+    mmcPackFile.writeText(gson.toJson(mmcPackJson))
 }
 
 /**
@@ -201,5 +221,10 @@ class InstallerParams(parser: ArgParser) {
         "-v", "--version",
         help = "Version profile to install bundle to."
     ).default { "1.8.9" }
+
+    val inject by parser.flagging(
+        "-i", "--inject",
+        help = "Inject profile rather than creating a new one. (Only affected in official launcher install)"
+    ).default { true }
 
 }

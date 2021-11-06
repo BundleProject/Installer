@@ -5,7 +5,7 @@ import com.google.gson.GsonBuilder
 import io.ktor.client.*
 import io.ktor.client.engine.apache.*
 import io.ktor.client.features.json.*
-import org.bundleproject.installer.gui.InstallerGui
+import org.bundleproject.installer.gui.frames.InstallerGui
 import java.awt.image.BufferedImage
 import java.io.File
 import java.text.SimpleDateFormat
@@ -85,6 +85,7 @@ fun getVersionsForFolder(dir: File): List<String>? {
     if (multimc != null) return multimc
 
     return (File(dir, "versions").listFiles() ?: return null)
+        .filter { it.isDirectory }
         .map { it.name }
 }
 

@@ -1,7 +1,11 @@
-package org.bundleproject.installer.gui
+package org.bundleproject.installer.gui.frames
 
 import com.formdev.flatlaf.FlatLightLaf
 import kotlinx.coroutines.runBlocking
+import org.bundleproject.installer.gui.elements.SmoothComboBox
+import org.bundleproject.installer.gui.elements.SmoothLabel
+import org.bundleproject.installer.gui.elements.SmoothTextArea
+import org.bundleproject.installer.gui.elements.SmoothTextField
 import org.bundleproject.installer.installMultiMC
 import org.bundleproject.installer.installOfficial
 import org.bundleproject.installer.utils.*
@@ -17,6 +21,7 @@ import kotlin.system.exitProcess
 object InstallerGui : JFrame("Bundle Installer") {
 
     private var versionField: JComboBox<String>
+    private var injectButton: JCheckBox
 
     /**
      * Sets up all components of the gui
@@ -34,7 +39,7 @@ object InstallerGui : JFrame("Bundle Installer") {
         val center = JPanel()
         center.layout = null
 
-        val titleText = JLabel("The Bundle Project")
+        val titleText = SmoothLabel("The Bundle Project")
         titleText.setBounds(2, 5, 385, 42)
         titleText.font = Font("Dialog", Font.BOLD, 18)
         titleText.horizontalAlignment = SwingConstants.CENTER
@@ -42,7 +47,7 @@ object InstallerGui : JFrame("Bundle Installer") {
         titleText.name = "TitleText"
         center.add(titleText)
 
-        val installerText = JLabel("Installer")
+        val installerText = SmoothLabel("Installer")
         installerText.name = "InstallerText"
         installerText.setBounds(2, 38, 385, 25)
         installerText.font = Font("Dialog", Font.BOLD, 14)
@@ -50,15 +55,15 @@ object InstallerGui : JFrame("Bundle Installer") {
         installerText.preferredSize = Dimension(385, 25)
         center.add(installerText)
 
-        val descriptionText = JTextArea()
+        val descriptionText = SmoothTextArea()
         descriptionText.name = "Description"
-        descriptionText.setBounds(15, 66, 365, 44)
+        descriptionText.setBounds(15, 60, 365, 48)
         descriptionText.isEditable = false
         descriptionText.isEnabled = true
         descriptionText.font = Font("Dialog", Font.PLAIN, 12)
         descriptionText.lineWrap = true
         descriptionText.isOpaque = false
-        descriptionText.preferredSize = Dimension(365, 44)
+        descriptionText.preferredSize = Dimension(365, 48)
         descriptionText.wrapStyleWord = true
         descriptionText.highlighter = null
         descriptionText.text =
@@ -68,12 +73,12 @@ object InstallerGui : JFrame("Bundle Installer") {
         center.add(descriptionText)
 
 
-        val pathText = JLabel("Path")
+        val pathText = SmoothLabel("Path")
         pathText.setBounds(15, 116, 47, 16)
         pathText.preferredSize = Dimension(47, 16)
         center.add(pathText)
 
-        val pathField = JTextField(getDefaultMinecraftDir()?.path ?: "Please select .minecraft")
+        val pathField = SmoothTextField(text = getDefaultMinecraftDir()?.path ?: "Please select .minecraft")
         pathField.setBounds(62, 114, 287, 20)
         pathField.preferredSize = Dimension(287, 20)
         pathField.document.addDocumentListener(object : DocumentListener {
@@ -97,17 +102,24 @@ object InstallerGui : JFrame("Bundle Installer") {
         }
         center.add(pathButton)
 
-        val versionText = JLabel("Version")
+        val versionText = SmoothLabel("Version")
         versionText.setBounds(15, 136, 47, 16)
         versionText.preferredSize = Dimension(47, 16)
         center.add(versionText)
 
-        versionField = JComboBox()
-        updateVersions(File(pathField.text))
-        versionField.setBounds(62, 138, 312, 20)
+        versionField = SmoothComboBox()
+        versionField.setBounds(62, 138, 287, 20)
         versionField.preferredSize = Dimension(312, 20)
         center.add(versionField)
 
+        injectButton = JCheckBox()
+        injectButton.setBounds(350, 138, 25, 20)
+        injectButton.margin = Insets(2, 2, 2, 2)
+        injectButton.toolTipText = "Inject Profile"
+        injectButton.isSelected = true
+        center.add(injectButton)
+
+        updateVersions(File(pathField.text))
 
         val bottom = JPanel()
         bottom.layout = FlowLayout(FlowLayout.CENTER, 15, 10)
@@ -133,7 +145,7 @@ object InstallerGui : JFrame("Bundle Installer") {
             try {
                 runBlocking {
                     if (multimc != null) installMultiMC(multimc, versionField.selectedItem as String)
-                    else installOfficial(dir, versionField.selectedItem as String)
+                    else installOfficial(dir, versionField.selectedItem as String, injectButton.isSelected)
                 }
                 success("Bundle has been successfully installed.")
             } catch (e: Exception) {
@@ -164,6 +176,11 @@ object InstallerGui : JFrame("Bundle Installer") {
      * @since 0.0.1
      */
     private fun updateVersions(dir: File) {
+        val isMultiMC = getMultiMCInstanceFolder(dir) != null
+
+        if (isMultiMC) injectButton.isSelected = true
+        injectButton.isEnabled = !isMultiMC
+
         versionField.removeAllItems()
         getVersionsForFolder(dir)?.forEach { versionField.addItem(it) }
     }
