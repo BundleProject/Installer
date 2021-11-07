@@ -4,7 +4,9 @@ import com.google.gson.*
 import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.DefaultHelpFormatter
 import com.xenomachina.argparser.default
+import com.xenomachina.argparser.mainBody
 import io.ktor.client.request.*
+import kotlinx.coroutines.runBlocking
 import org.bundleproject.installer.api.response.VersionResponse
 import org.bundleproject.installer.gui.frames.InstallerGui
 import org.bundleproject.installer.updater.getLatestUpdate
@@ -21,9 +23,9 @@ import javax.swing.JOptionPane
  *
  * @since 0.0.1
  */
-suspend fun main(args: Array<String>) {
+fun main(args: Array<String>) = mainBody {
     ArgParser(args, helpFormatter = DefaultHelpFormatter()).parseInto(::InstallerParams).run {
-        val update = if (!noUpdate) getLatestUpdate().takeIf { it != INSTALLER_VERSION } else null
+        val update = if (!noUpdate) runBlocking { getLatestUpdate() }.takeIf { it != INSTALLER_VERSION } else null
 
         if (silent) {
             if (update != null) {
@@ -34,14 +36,15 @@ suspend fun main(args: Array<String>) {
 
             if (path == null) throw IllegalArgumentException("Path does not exist or it wasn't specified.")
 
-            if (!multimc) installOfficial(path!!, mcversion, inject)
-            else installMultiMC(getMultiMCInstanceFolder(path!!)!!, mcversion)
+            runBlocking {
+                if (!multimc) installOfficial(path!!, mcversion, inject)
+                else installMultiMC(getMultiMCInstanceFolder(path!!)!!, mcversion)
+            }
 
-            return
+            return@mainBody
         }
 
         InstallerGui.isVisible = true
-
 
         if (update != null) {
             JOptionPane.showOptionDialog(InstallerGui, "There is an installer update available!", "Installer Update", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null, arrayOf("Update", "Maybe Later"), "Update").also {
@@ -247,7 +250,7 @@ class InstallerParams(parser: ArgParser) {
 
     val inject by parser.flagging(
         "-i", "--inject",
-        help = "Inject profile rather than creating a new one. (Only affected in official launcher install)"
+        help = "Inject profile rather than creating a new one. (Only affected in official launcher install)",
     ).default { true }
 
     val noUpdate by parser.flagging(
