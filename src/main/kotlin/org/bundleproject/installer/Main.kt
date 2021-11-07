@@ -40,7 +40,7 @@ suspend fun main(args: Array<String>) {
 suspend fun installOfficial(path: File, mcversion: String, inject: Boolean) {
     println("Installing using the official launcher.")
 
-    val latest = http.get<VersionResponse>("$API/$API_VERSION/bundle/version").data.updater
+    val latest = http.get<VersionResponse>("$API/$API_VERSION/bundle/version").data.launchWrapper
 
     var versionJson = File(path, "versions/$mcversion/$mcversion.json")
     val json = InputStreamReader(versionJson.inputStream()).use {
@@ -50,7 +50,7 @@ suspend fun installOfficial(path: File, mcversion: String, inject: Boolean) {
     val mainClass = json.get("mainClass").asString
     val libs = JsonArray().also {
         json.getAsJsonArray("libraries")
-            .filter  { !(it.asJsonObject.get("name")?.asString?.startsWith("org.bundleproject:bundle:") ?: false) }
+            .filter  { !(it.asJsonObject.get("name")?.asString?.startsWith("org.bundleproject:launchwrapper:") ?: false) }
             .forEach { lib -> it.add(lib) }
     }
 
@@ -70,7 +70,7 @@ suspend fun installOfficial(path: File, mcversion: String, inject: Boolean) {
         JsonObject()
     }
     // add bundle library
-    bundleLib.addProperty("name", "org.bundleproject:bundle:$latest")
+    bundleLib.addProperty("name", "org.bundleproject:launchwrapper:$latest")
     bundleLib.addProperty("url", "https://jitpack.io/")
     libs.add(bundleLib)
     json.add("libraries", libs)
@@ -123,7 +123,7 @@ suspend fun installMultiMC(instanceFolder: File, instance: String) {
 
     val libs = JsonArray()
     libs.add(JsonObject().also {
-        it.addProperty("name", "org.bundleproject:bundle:$latest")
+        it.addProperty("name", "org.bundleproject:launchwrapper:$latest")
         it.addProperty("url", "https://jitpack.io/")
     })
     versionJson.add("libraries", libs)
