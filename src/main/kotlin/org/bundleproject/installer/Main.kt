@@ -7,10 +7,14 @@ import com.xenomachina.argparser.default
 import io.ktor.client.request.*
 import org.bundleproject.installer.api.response.VersionResponse
 import org.bundleproject.installer.gui.frames.InstallerGui
+import org.bundleproject.installer.updater.getLatestUpdate
 import org.bundleproject.installer.utils.*
+import java.awt.Desktop
 import java.io.File
 import java.io.InputStreamReader
 import java.lang.IllegalArgumentException
+import java.net.URI
+import javax.swing.JOptionPane
 
 /**
  * Parses command-line arguments and opens the gui
@@ -19,7 +23,15 @@ import java.lang.IllegalArgumentException
  */
 suspend fun main(args: Array<String>) {
     ArgParser(args, helpFormatter = DefaultHelpFormatter()).parseInto(::InstallerParams).run {
+        val update = if (!noUpdate) getLatestUpdate().takeIf { it != INSTALLER_VERSION } else null
+
         if (silent) {
+            if (update != null) {
+                println("There is an installer update available!")
+                println("Get it here at https://github.com/BundleProject/Installer/releases/tag/$update")
+                println()
+            }
+
             if (path == null) throw IllegalArgumentException("Path does not exist or it wasn't specified.")
 
             if (!multimc) installOfficial(path!!, mcversion, inject)
@@ -29,6 +41,17 @@ suspend fun main(args: Array<String>) {
         }
 
         InstallerGui.isVisible = true
+
+
+        if (update != null) {
+            JOptionPane.showOptionDialog(InstallerGui, "There is an installer update available!", "Installer Update", JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE, null, arrayOf("Update", "Maybe Later"), "Update").also {
+                if (it == JOptionPane.YES_OPTION) {
+                    if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+                        Desktop.getDesktop().browse(URI.create("https://github.com/BundleProject/Installer/releases/tag/$update"))
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -227,4 +250,8 @@ class InstallerParams(parser: ArgParser) {
         help = "Inject profile rather than creating a new one. (Only affected in official launcher install)"
     ).default { true }
 
+    val noUpdate by parser.flagging(
+        "--no-update",
+        help = "Prevent installer from checking for updates."
+    )
 }
