@@ -17,7 +17,7 @@ dependencies {
     implementation("io.ktor:ktor-client-core:1.6.5")
     implementation("io.ktor:ktor-client-apache:1.6.5")
 
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.31")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0")
 
     implementation("com.formdev:flatlaf:1.6.1")
     implementation("com.google.code.gson:gson:2.8.9")
