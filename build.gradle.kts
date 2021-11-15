@@ -19,7 +19,7 @@ dependencies {
 
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.31")
 
-    implementation("com.formdev:flatlaf:1.6.1")
+    implementation("com.formdev:flatlaf:1.6.3")
     implementation("com.google.code.gson:gson:2.8.9")
     implementation("com.xenomachina:kotlin-argparser:2.0.7") {
         exclude(module = "kotlin-stdlib")
