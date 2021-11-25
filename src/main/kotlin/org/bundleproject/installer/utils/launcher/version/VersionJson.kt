@@ -22,6 +22,10 @@ interface VersionJson {
         private val schemas = mapOf<Int, KFunction<VersionJson>>(
             21 to ::Schema2021,
             14 to ::Schema2014,
+            15 to ::Schema2014,
+            16 to ::Schema2014,
+            17 to ::Schema2014,
+            18 to ::Schema2014,
         )
 
         fun of(

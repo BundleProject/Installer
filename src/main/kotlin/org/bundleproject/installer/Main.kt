@@ -102,6 +102,7 @@ suspend fun installOfficial(path: File, mcversion: String) {
     val availableLaunchers = LauncherProfileTypes.findAvailableTypes(path)
     val selectedLauncher = if (availableLaunchers.size > 1) {
         val option = JOptionPane.showOptionDialog(InstallerGui, "There are multiple Minecraft launchers available! Which one would you like to use?", "Bundle Installer", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, availableLaunchers.map { it.friendlyName }.toTypedArray(), availableLaunchers.first().friendlyName)
+        if (option !in availableLaunchers.indices) return
         availableLaunchers[option]
     } else {
         availableLaunchers.first()
