@@ -18,10 +18,9 @@ import javax.swing.event.DocumentListener
 import kotlin.math.max
 import kotlin.system.exitProcess
 
-object InstallerGui : JFrame("Bundle Installer") {
+object InstallerGui : JFrame("Bundle Installer $INSTALLER_VERSION") {
 
     private var versionField: JComboBox<String>
-    private var injectButton: JCheckBox
 
     /**
      * Sets up all components of the gui
@@ -112,13 +111,6 @@ object InstallerGui : JFrame("Bundle Installer") {
         versionField.preferredSize = Dimension(312, 20)
         center.add(versionField)
 
-        injectButton = JCheckBox()
-        injectButton.setBounds(350, 138, 25, 20)
-        injectButton.margin = Insets(2, 2, 2, 2)
-        injectButton.toolTipText = "Inject Profile"
-        injectButton.isSelected = true
-        center.add(injectButton)
-
         updateVersions(File(pathField.text))
 
         val bottom = JPanel()
@@ -145,9 +137,8 @@ object InstallerGui : JFrame("Bundle Installer") {
             try {
                 runBlocking {
                     if (multimc != null) installMultiMC(multimc, versionField.selectedItem as String)
-                    else installOfficial(dir, versionField.selectedItem as String, injectButton.isSelected)
+                    else installOfficial(dir, versionField.selectedItem as String)
                 }
-                success("Bundle has been successfully installed.")
             } catch (e: Exception) {
                 e.printStackTrace()
                 err("Failed to install Bundle!")
@@ -176,11 +167,6 @@ object InstallerGui : JFrame("Bundle Installer") {
      * @since 0.0.1
      */
     private fun updateVersions(dir: File) {
-        val isMultiMC = getMultiMCInstanceFolder(dir) != null
-
-        if (isMultiMC) injectButton.isSelected = true
-        injectButton.isEnabled = !isMultiMC
-
         versionField.removeAllItems()
         getVersionsForFolder(dir)?.forEach { versionField.addItem(it) }
     }
@@ -206,7 +192,7 @@ object InstallerGui : JFrame("Bundle Installer") {
      *
      * @since 0.0.1
      */
-    private fun success(message: String) {
+    fun success(message: String) {
         JOptionPane.showMessageDialog(this, message, "Success", JOptionPane.PLAIN_MESSAGE)
     }
 
@@ -215,7 +201,7 @@ object InstallerGui : JFrame("Bundle Installer") {
      *
      * @since 0.0.1
      */
-    private fun err(message: String) {
+    fun err(message: String) {
         JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE)
     }
 

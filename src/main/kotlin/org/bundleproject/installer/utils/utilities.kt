@@ -8,6 +8,7 @@ import io.ktor.client.features.json.*
 import org.bundleproject.installer.gui.frames.InstallerGui
 import java.awt.image.BufferedImage
 import java.io.File
+import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.*
 import javax.imageio.ImageIO
@@ -16,6 +17,14 @@ val http = HttpClient(Apache) {
     install(JsonFeature)
 }
 val gson: Gson = GsonBuilder().setPrettyPrinting().create()
+
+/**
+ * Shorthand for getting a resource as stream
+ *
+ * @since 0.2.0
+ */
+fun getResource(path: String): InputStream =
+    InstallerGui::class.java.getResourceAsStream(path)!!
 
 /**
  * Gets a buffered image from the resources of
@@ -96,4 +105,14 @@ fun getVersionsForFolder(dir: File): List<String>? {
  */
 fun getCurrentTime(): String =
     SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").format(Calendar.getInstance().time)
+
+
+/**
+ * Shorthand for encoding base64
+ *
+ * @since 0.2.0
+ */
+fun getBase64(bytes: ByteArray): String {
+    return Base64.getEncoder().encodeToString(bytes)
+}
 

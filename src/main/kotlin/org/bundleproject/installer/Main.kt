@@ -6,17 +6,24 @@ import com.xenomachina.argparser.DefaultHelpFormatter
 import com.xenomachina.argparser.default
 import com.xenomachina.argparser.mainBody
 import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
 import kotlinx.coroutines.runBlocking
 import org.bundleproject.installer.api.response.VersionResponse
 import org.bundleproject.installer.gui.frames.InstallerGui
 import org.bundleproject.installer.updater.getLatestUpdate
 import org.bundleproject.installer.utils.*
+import org.bundleproject.installer.utils.launcher.profiles.LauncherProfile
+import org.bundleproject.installer.utils.launcher.profiles.LauncherProfileTypes
+import org.bundleproject.installer.utils.launcher.profiles.LauncherProfilesJson
+import org.bundleproject.installer.utils.launcher.version.VersionJson
+import org.bundleproject.installer.utils.launcher.version.VersionLibrary
 import java.awt.Desktop
 import java.io.File
 import java.io.InputStreamReader
-import java.lang.IllegalArgumentException
 import java.net.URI
 import javax.swing.JOptionPane
+import kotlin.IllegalArgumentException
 
 /**
  * Parses command-line arguments and opens the gui
@@ -37,7 +44,7 @@ fun main(args: Array<String>) = mainBody {
             if (path == null) throw IllegalArgumentException("Path does not exist or it wasn't specified.")
 
             runBlocking {
-                if (!multimc) installOfficial(path!!, mcversion, inject)
+                if (!multimc) installOfficial(path!!, mcversion)
                 else installMultiMC(getMultiMCInstanceFolder(path!!)!!, mcversion)
             }
 
@@ -63,53 +70,57 @@ fun main(args: Array<String>) = mainBody {
  *
  * @since 0.0.1
  */
-suspend fun installOfficial(path: File, mcversion: String, inject: Boolean) {
+suspend fun installOfficial(path: File, mcversion: String) {
     println("Installing using the official launcher.")
 
     val latest = http.get<VersionResponse>("$API/$API_VERSION/bundle/version").data.launchWrapper
 
-    var versionJson = File(path, "versions/$mcversion/$mcversion.json")
-    val json = InputStreamReader(versionJson.inputStream()).use {
-        JsonParser.parseReader(it).asJsonObject
+    val versionJson = try {
+        VersionJson.of(File(path, "versions/$mcversion/$mcversion.json"))
+    } catch (e: IllegalArgumentException) {
+        InstallerGui.err(e.message ?: "No error message provided.")
+        return
     }
 
-    val mainClass = json.get("mainClass").asString
-    val libs = JsonArray().also {
-        json.getAsJsonArray("libraries")
-            .filter  { !(it.asJsonObject.get("name")?.asString?.startsWith("org.bundleproject:launchwrapper:") ?: false) }
-            .forEach { lib -> it.add(lib) }
+    if (versionJson.id.endsWith("-bundle")) {
+        InstallerGui.err("This is already a bundle installation. Please select the original version!")
+        return
     }
 
-    val bundleLib = if (!inject) {
-        // switch target version json to bundle's own folder
-        versionJson = File(path, "versions/$mcversion-bundle/$mcversion-bundle.json")
-        versionJson.parentFile.mkdir()
+    versionJson.id = versionJson.id + "-bundle"
+    versionJson.addGameArgument("--bundleMainClass", versionJson.mainClass)
+    versionJson.mainClass = "org.bundleproject.launchwrapper.MainKt"
+    versionJson.addLibrary(VersionLibrary(name = "org.bundleproject:launchwrapper:$latest", url = "https://jitpack.io/org/bundleproject/launchwrapper/$latest/launchwrapper-$latest.jar", path = "org/bundleproject/launchwrapper/$latest/launchwrapper-$latest.jar", sha1 = http.get<String>("https://jitpack.io/org/bundleproject/launchwrapper/$latest/launchwrapper-$latest.jar.sha1"), size = http.get<HttpResponse>("https://jitpack.io/org/bundleproject/launchwrapper/$latest/launchwrapper-$latest.jar").contentLength()!!.toInt()))
 
-        // copy over existing jar to prevent re-downloading
-        val jar = File(path, "versions/$mcversion/$mcversion.jar")
-        if (jar.exists()) jar.copyTo(File(path, "versions/$mcversion-bundle/$mcversion-bundle.jar"))
+    val versionJsonFile = File(path, "versions/$mcversion-bundle/$mcversion-bundle.json")
+    versionJsonFile.parentFile.mkdir()
+    versionJson.save(versionJsonFile)
 
-        json.also {
-            it.addProperty("id", "$mcversion-bundle")
-        }
+    val jar = File(path, "versions/$mcversion/$mcversion.jar")
+    if (jar.exists()) jar.copyTo(File(path, "versions/$mcversion-bundle/$mcversion-bundle.jar"))
+
+    val availableLaunchers = LauncherProfileTypes.findAvailableTypes(path)
+    val selectedLauncher = if (availableLaunchers.size > 1) {
+        val option = JOptionPane.showOptionDialog(InstallerGui, "There are multiple Minecraft launchers available! Which one would you like to use?", "Bundle Installer", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, availableLaunchers.map { it.friendlyName }.toTypedArray(), availableLaunchers.first().friendlyName)
+        availableLaunchers[option]
     } else {
-        JsonObject()
+        availableLaunchers.first()
     }
-    // add bundle library
-    bundleLib.addProperty("name", "org.bundleproject:launchwrapper:$latest")
-    bundleLib.addProperty("url", "https://jitpack.io/")
-    libs.add(bundleLib)
-    json.add("libraries", libs)
 
-    // make the launcher run bundle rather than the game's main class
-    json.addProperty("mainClass", "org.bundleproject.bundle.main.Main")
+    val launcherProfilesJson = LauncherProfilesJson(File(path, selectedLauncher.profileName))
+    launcherProfilesJson.addProfile(
+        "bundle-$mcversion",
+        LauncherProfile(
+            getCurrentTime(),
+            "data:image/png;base64,${getBase64(getResource("/bundle.png").readBytes())}",
+            getCurrentTime(),
+            versionJson.id,
+            "Bundle Launchwrapper $latest for $mcversion"
+        )
+    )
+    launcherProfilesJson.save()
 
-    // input original main class into the game arguments
-    val gameArguments = json.getAsJsonObject("arguments").getAsJsonArray("game")
-    gameArguments.add("--bundleMainClass")
-    gameArguments.add(mainClass)
-
-    versionJson.writeText(gson.toJson(json))
+    InstallerGui.success("Successfully installed Bundle")
 }
 
 /**
@@ -247,11 +258,6 @@ class InstallerParams(parser: ArgParser) {
         "-v", "--version",
         help = "Version profile to install bundle to."
     ).default { "1.8.9" }
-
-    val inject by parser.flagging(
-        "-i", "--inject",
-        help = "Inject profile rather than creating a new one. (Only affected in official launcher install)",
-    ).default { true }
 
     val noUpdate by parser.flagging(
         "--no-update",
