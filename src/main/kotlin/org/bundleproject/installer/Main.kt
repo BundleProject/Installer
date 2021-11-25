@@ -90,7 +90,7 @@ suspend fun installOfficial(path: File, mcversion: String) {
     versionJson.id = versionJson.id + "-bundle"
     versionJson.addGameArgument("--bundleMainClass", versionJson.mainClass)
     versionJson.mainClass = "org.bundleproject.launchwrapper.MainKt"
-    versionJson.addLibrary(VersionLibrary(name = "org.bundleproject:launchwrapper:$latest", url = "https://jitpack.io/org/bundleproject/launchwrapper/$latest/launchwrapper-$latest.jar", path = "org/bundleproject/launchwrapper/$latest/launchwrapper-$latest.jar", sha1 = http.get<String>("https://jitpack.io/org/bundleproject/launchwrapper/$latest/launchwrapper-$latest.jar.sha1"), size = http.get<HttpResponse>("https://jitpack.io/org/bundleproject/launchwrapper/$latest/launchwrapper-$latest.jar").contentLength()!!.toInt()))
+    versionJson.addLibrary(VersionLibrary(name = "org.bundleproject:launchwrapper:$latest", url = "https://jitpack.io/org/bundleproject/launchwrapper/$latest/launchwrapper-$latest.jar", path = "org/bundleproject/launchwrapper/$latest/launchwrapper-$latest.jar", sha1 = http.get<String>("https://jitpack.io/org/bundleproject/launchwrapper/$latest/launchwrapper-$latest.jar.sha1"), size = http.head<HttpResponse>("https://jitpack.io/org/bundleproject/launchwrapper/$latest/launchwrapper-$latest.jar").contentLength()!!.toInt()))
 
     val versionJsonFile = File(path, "versions/$mcversion-bundle/$mcversion-bundle.json")
     versionJsonFile.parentFile.mkdir()
