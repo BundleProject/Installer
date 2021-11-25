@@ -5,6 +5,7 @@ import com.xenomachina.argparser.ArgParser
 import com.xenomachina.argparser.DefaultHelpFormatter
 import com.xenomachina.argparser.default
 import com.xenomachina.argparser.mainBody
+import io.ktor.client.features.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -32,7 +33,16 @@ import kotlin.IllegalArgumentException
  */
 fun main(args: Array<String>) = mainBody {
     ArgParser(args, helpFormatter = DefaultHelpFormatter()).parseInto(::InstallerParams).run {
-        val update = if (!noUpdate) runBlocking { getLatestUpdate() }.takeIf { it != INSTALLER_VERSION } else null
+        val update = try {
+            if (!noUpdate) {
+                runBlocking { getLatestUpdate() }.takeIf { it != INSTALLER_VERSION }
+            } else null
+        } catch (e: Exception) {
+            e.printStackTrace()
+            println("Failed to check for updates! ${e.message}")
+            if (!silent) InstallerGui.err("Failed to check for updates! ${e.message}")
+            null
+        }
 
         if (silent) {
             if (update != null) {
@@ -73,7 +83,13 @@ fun main(args: Array<String>) = mainBody {
 suspend fun installOfficial(path: File, mcversion: String) {
     println("Installing using the official launcher.")
 
-    val latest = http.get<VersionResponse>("$API/$API_VERSION/bundle/version").data.launchWrapper
+    val latest = try {
+        http.get<VersionResponse>("$API/$API_VERSION/bundle/version").data.launchWrapper
+    } catch (e: ServerResponseException) {
+        e.printStackTrace()
+        InstallerGui.err("Couldn't get latest Bundle version to install: ${e.message}")
+        return
+    }
 
     val versionJson = try {
         VersionJson.of(File(path, "versions/$mcversion/$mcversion.json"))
