@@ -26,15 +26,15 @@ jobs:
     
     strategy:
       matrix:
-        jdk: [8, 11, 16]
+        jdk: [8, 11, 17]
 
     steps:
     - uses: actions/checkout@v2
     - name: Set up JDK ${{ matrix.jdk }}
-      uses: actions/setup-java@v2
+      uses: actions/setup-java@v2.3.1
       with:
         java-version: ${{ matrix.jdk }}
-        distribution: 'adopt'
+        distribution: 'temurin'
     - uses: actions/cache@v2
       with:
         path: |
