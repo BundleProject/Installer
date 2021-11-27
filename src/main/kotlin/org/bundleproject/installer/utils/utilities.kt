@@ -43,9 +43,10 @@ fun getResourceImage(path: String): BufferedImage =
  */
 fun getDefaultMinecraftDir(): File? {
     val dir = when (OSChecker.detectedOS) {
-        OSType.Windows, OSType.Unknown -> File(System.getenv("APPDATA"), ".minecraft")
+        OSType.Windows -> File(System.getenv("APPDATA"), ".minecraft")
         OSType.Mac -> File(System.getProperty("user.home"), "Library/Application Support/Minecraft")
         OSType.Linux -> File(System.getProperty("user.home"), ".minecraft")
+        OSType.Unknown -> return null
     }
     if (!dir.exists()) return null
     return dir

@@ -19,7 +19,6 @@ import kotlin.math.max
 import kotlin.system.exitProcess
 
 object InstallerGui : JFrame("Bundle Installer $INSTALLER_VERSION") {
-
     private var versionField: JComboBox<String>
 
     /**
@@ -33,7 +32,6 @@ object InstallerGui : JFrame("Bundle Installer $INSTALLER_VERSION") {
         iconImage = getResourceImage("/bundle.png")
         this.defaultCloseOperation = WindowConstants.EXIT_ON_CLOSE
         setSize(404, 258)
-        isResizable = false
 
         val center = JPanel()
         center.layout = null

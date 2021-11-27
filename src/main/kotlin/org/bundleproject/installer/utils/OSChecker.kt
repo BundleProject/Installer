@@ -1,7 +1,6 @@
 package org.bundleproject.installer.utils
 
 object OSChecker {
-
     val detectedOS: OSType = getOperatingSystemType()
 
     private fun getOperatingSystemType(): OSType {

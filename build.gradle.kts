@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "org.bundleproject"
-version = "0.2.3"
+version = "0.2.4"
 
 repositories {
     mavenCentral()
@@ -17,8 +17,8 @@ dependencies {
     implementation("io.ktor:ktor-client-core:1.6.5")
     implementation("io.ktor:ktor-client-apache:1.6.5")
 
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0")
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.6.0")
+    implementation(kotlin("stdlib-jdk8", "1.6.0"))
+    implementation(kotlin("reflect", "1.6.0"))
 
     implementation("com.formdev:flatlaf:1.6.4")
     implementation("com.google.code.gson:gson:2.8.9")
