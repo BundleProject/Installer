@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "org.bundleproject"
-version = "0.2.4"
+version = "0.2.5"
 
 repositories {
     mavenCentral()
@@ -35,6 +35,12 @@ blossom {
 
 application {
     mainClass.set("org.bundleproject.installer.MainKt")
+}
+
+kotlin {
+    jvmToolchain {
+        (this as JavaToolchainSpec).languageVersion.set(JavaLanguageVersion.of(11))
+    }
 }
 
 tasks {

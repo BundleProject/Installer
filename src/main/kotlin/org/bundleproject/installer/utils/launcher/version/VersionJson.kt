@@ -33,6 +33,7 @@ interface VersionJson {
             minimumLauncherVersion: Int =
                 JsonParser.parseString(file.readText()).asJsonObject.get("minimumLauncherVersion").asInt
         ): VersionJson =
-            schemas[minimumLauncherVersion]?.call(file) ?: throw IllegalArgumentException("Unknown minimum launcher version: $minimumLauncherVersion")
+            schemas[minimumLauncherVersion]?.call(file)
+                ?: throw IllegalArgumentException("Unknown minimum launcher version: $minimumLauncherVersion")
     }
 }

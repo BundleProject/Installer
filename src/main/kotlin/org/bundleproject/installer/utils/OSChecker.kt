@@ -1,19 +1,13 @@
 package org.bundleproject.installer.utils
 
-object OSChecker {
-    val detectedOS: OSType = getOperatingSystemType()
-
-    private fun getOperatingSystemType(): OSType {
-        return with (System.getProperty("os.name", "generic").lowercase()) {
-            when {
-                contains("win") -> OSType.Windows
-                contains("mac") || contains("darwin") -> OSType.Mac
-                contains("nux") -> OSType.Linux
-                else -> OSType.Unknown
-            }
-        }
+val currentOs: OSType by lazy {
+    val osName = System.getProperty("os.name", "generic").lowercase()
+    when {
+        osName.contains("win") -> OSType.Windows
+        osName.contains("mac") || osName.contains("darwin") -> OSType.Mac
+        osName.contains("nux") -> OSType.Linux
+        else -> OSType.Unknown
     }
-
 }
 
 enum class OSType {

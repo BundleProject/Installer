@@ -146,7 +146,6 @@ object InstallerGui : JFrame("Bundle Installer $INSTALLER_VERSION") {
         installButton.requestFocus()
         bottom.add(installButton)
 
-
         val panel = JPanel()
         panel.layout = BorderLayout(5, 5)
         panel.preferredSize = Dimension(394, 203)

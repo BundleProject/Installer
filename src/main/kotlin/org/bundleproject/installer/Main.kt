@@ -25,6 +25,7 @@ import java.io.InputStreamReader
 import java.net.URI
 import javax.swing.JOptionPane
 import kotlin.IllegalArgumentException
+import kotlin.system.exitProcess
 
 /**
  * Parses command-line arguments and opens the gui
@@ -32,6 +33,12 @@ import kotlin.IllegalArgumentException
  * @since 0.0.1
  */
 fun main(args: Array<String>) = mainBody {
+    if (vmVersion < 9) {
+        println("Bundle installer requires Java 9 or later.")
+        InstallerGui.err("Bundle installer requires Java 9 or later.")
+        exitProcess(-1)
+    }
+
     ArgParser(args, helpFormatter = DefaultHelpFormatter()).parseInto(::InstallerParams).run {
         val update = try {
             if (!noUpdate) {
