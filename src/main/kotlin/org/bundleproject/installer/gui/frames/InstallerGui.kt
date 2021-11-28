@@ -31,6 +31,7 @@ object InstallerGui : JFrame("Bundle Installer $INSTALLER_VERSION") {
 
         iconImage = getResourceImage("/bundle.png")
         this.defaultCloseOperation = WindowConstants.EXIT_ON_CLOSE
+        isResizable = false
         setSize(404, 258)
 
         val center = JPanel()
