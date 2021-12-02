@@ -19,6 +19,7 @@ import org.bundleproject.installer.utils.launcher.profiles.LauncherProfileTypes
 import org.bundleproject.installer.utils.launcher.profiles.LauncherProfilesJson
 import org.bundleproject.installer.utils.launcher.version.VersionJson
 import org.bundleproject.installer.utils.launcher.version.VersionLibrary
+import org.bundleproject.libversion.Version
 import java.awt.Desktop
 import java.io.File
 import java.io.InputStreamReader
@@ -34,15 +35,15 @@ import kotlin.system.exitProcess
  */
 fun main(args: Array<String>) = mainBody {
     if (vmVersion < 9) {
-        println("Bundle installer requires Java 9 or later.")
-        InstallerGui.err("Bundle installer requires Java 9 or later.")
+        println("Bundle installer requires Java 9 or later. This is due to a Ktor bug. The restriction will be lifted soon.")
+        InstallerGui.err("Bundle installer requires Java 9 or later. This is due to a Ktor bug. The restriction will be lifted soon.")
         exitProcess(-1)
     }
 
     ArgParser(args, helpFormatter = DefaultHelpFormatter()).parseInto(::InstallerParams).run {
         val update = try {
             if (!noUpdate) {
-                runBlocking { getLatestUpdate() }.takeIf { it != INSTALLER_VERSION }
+                runBlocking { Version.of(getLatestUpdate()) }.takeIf { it > INSTALLER_VERSION }
             } else null
         } catch (e: Exception) {
             e.printStackTrace()
@@ -91,7 +92,7 @@ suspend fun installOfficial(path: File, mcversion: String) {
     println("Installing using the official launcher.")
 
     val latest = try {
-        http.get<VersionResponse>("$API/$API_VERSION/bundle/version").data.launchWrapper
+        http.get<VersionResponse>("$API/$API_VERSION/bundle/version").data.let { if (PRERELEASE) it.prerelease else it.release }.launchWrapper
     } catch (e: ServerResponseException) {
         e.printStackTrace()
         InstallerGui.err("Couldn't get latest Bundle version to install: ${e.message}")
@@ -169,7 +170,7 @@ suspend fun installMultiMC(instanceFolder: File, instance: String) {
     val bundleMetaFolder = File(metaFolder, "org.bundleproject")
     bundleMetaFolder.mkdir()
 
-    val latest = http.get<VersionResponse>("$API/$API_VERSION/bundle/version").data.updater
+    val latest = http.get<VersionResponse>("$API/$API_VERSION/bundle/version").data.let { if (PRERELEASE) it.prerelease else it.release }.launchWrapper
 
     val versionFile = File(bundleMetaFolder, "$latest.json")
 

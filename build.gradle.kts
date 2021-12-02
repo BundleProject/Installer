@@ -6,16 +6,17 @@ plugins {
 }
 
 group = "org.bundleproject"
-version = "0.2.5"
+version = "0.2.6"
 
 repositories {
     mavenCentral()
+    maven("https://jitpack.io")
 }
 
 dependencies {
-    implementation("io.ktor:ktor-client-gson:1.6.5")
-    implementation("io.ktor:ktor-client-core:1.6.5")
-    implementation("io.ktor:ktor-client-apache:1.6.5")
+    implementation("io.ktor:ktor-client-gson:1.6.6")
+    implementation("io.ktor:ktor-client-core:1.6.6")
+    implementation("io.ktor:ktor-client-apache:1.6.6")
 
     implementation(kotlin("stdlib-jdk8", "1.6.0"))
     implementation(kotlin("reflect", "1.6.0"))
@@ -25,6 +26,8 @@ dependencies {
     implementation("com.xenomachina:kotlin-argparser:2.0.7") {
         exclude(module = "kotlin-stdlib")
     }
+
+    implementation("org.bundleproject:libversion:0.0.2")
 }
 
 blossom {

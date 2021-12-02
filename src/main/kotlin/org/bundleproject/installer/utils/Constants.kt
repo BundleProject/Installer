@@ -1,6 +1,9 @@
 package org.bundleproject.installer.utils
 
+import org.bundleproject.libversion.Version
+
 const val API = "https://api.bundleproject.org"
 const val API_VERSION = "v1"
 
-const val INSTALLER_VERSION = "__GRADLE_VERSION__"
+val INSTALLER_VERSION = Version.of("__GRADLE_VERSION__")
+const val PRERELEASE = true
