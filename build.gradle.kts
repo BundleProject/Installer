@@ -27,7 +27,7 @@ dependencies {
         exclude(module = "kotlin-stdlib")
     }
 
-    implementation("org.bundleproject:libversion:0.0.2")
+    implementation("org.bundleproject:libversion:0.0.3")
 }
 
 blossom {
