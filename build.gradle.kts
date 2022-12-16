@@ -21,7 +21,7 @@ dependencies {
     implementation(kotlin("stdlib-jdk8", "1.6.0"))
     implementation(kotlin("reflect", "1.6.0"))
 
-    implementation("com.formdev:flatlaf:1.6.4")
+    implementation("com.formdev:flatlaf:3.0")
     implementation("com.google.code.gson:gson:2.8.9")
     implementation("com.xenomachina:kotlin-argparser:2.0.7") {
         exclude(module = "kotlin-stdlib")
